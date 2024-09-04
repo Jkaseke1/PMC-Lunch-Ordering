@@ -8,7 +8,7 @@ const LandingPage = () => {
         Welcome to Pulse Pharmaceuticals
       </h1>
       <p className="text-lg mb-6 text-gray-600">
-        Your lunch ordering space with two caterers and delicious menus.
+        Your lunch ordering space with Ruth and Makagi caterers and delicious menus.
       </p>
       <div className="flex space-x-4">
         <Link
