@@ -7,19 +7,55 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useDispatch } from 'react-redux';
 import { logout } from '../redux/userSlice';
 import { useNavigate } from 'react-router-dom';
+import { Container, Grid, Paper, Typography, Button, List, ListItem, ListItemText, Divider } from '@mui/material';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import GrainIcon from '@mui/icons-material/Grain';
+import LocalDiningIcon from '@mui/icons-material/LocalDining';
+import CakeIcon from '@mui/icons-material/Cake';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { styled } from '@mui/system';
+
+const SelectedListItem = styled(ListItem)(({ theme, selected }) => ({
+  backgroundColor: selected ? theme.palette.primary.light : 'inherit',
+  '&:hover': {
+    backgroundColor: selected ? theme.palette.primary.main : theme.palette.action.hover,
+    color: selected ? theme.palette.common.white : 'inherit',
+  },
+  '&.Mui-selected': {
+    backgroundColor: theme.palette.primary.dark,
+    color: theme.palette.common.white,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.main,
+    },
+  },
+}));
+
+const CategoryTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 'bold',
+  border: `2px solid purple`,
+  padding: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
+  display: 'flex',
+  alignItems: 'center',
+  color: theme.palette.text.primary,
+  backgroundColor: 'lightgrey',
+}));
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [selectedItems, setSelectedItems] = useState({ entrees: null, starches: null, sides: null, desserts: null });
+  const [selectedItems, setSelectedItems] = useState({
+    Ruth: { entrees: null, starches: null, sides: null, desserts: null },
+    Makagi: { entrees: null, starches: null, sides: null, desserts: null },
+  });
   const [menu, setMenu] = useState({
     Ruth: { entrees: [], starches: [], sides: [], desserts: [] },
-    Makagi: { entrees: [], starches: [], sides: [], desserts: [] }
+    Makagi: { entrees: [], starches: [], sides: [], desserts: [] },
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCaterer, setSelectedCaterer] = useState('');
-  const [orderDetails, setOrderDetails] = useState(null); // State to hold order details
+  const [orderDetails, setOrderDetails] = useState(null);
 
   useEffect(() => {
     const loadMenu = () => {
@@ -34,22 +70,20 @@ const Dashboard = () => {
             { name: 'Gango' },
             { name: 'Roast' },
             { name: 'Mixed Grill' },
-            { name: 'Chicken Burger' }
+            { name: 'Chicken Burger' },
           ],
           starches: [
             { name: 'Chips' },
             { name: 'Wedges' },
             { name: 'Rice' },
             { name: 'Rice Dovi' },
-            { name: 'Sadza' }
+            { name: 'Sadza' },
           ],
           sides: [
             { name: 'Mixed Vegetables' },
-            { name: 'Butternut' }
+            { name: 'Butternut' },
           ],
-          desserts: [
-            { name: 'Fruitpack' }
-          ]
+          desserts: [{ name: 'Fruitpack' }],
         },
         Makagi: {
           entrees: [
@@ -58,29 +92,35 @@ const Dashboard = () => {
             { name: 'Beef Stew' },
             { name: 'Mixed Grill' },
             { name: 'Chicken Roast' },
-            { name: 'Bacon Burger' }
+            { name: 'Bacon Burger' },
           ],
           starches: [
             { name: 'Spaghetti' },
             { name: 'Chips' },
             { name: 'Rice' },
             { name: 'Peanut Butter Rice' },
-            { name: 'Sadza' }
+            { name: 'Sadza' },
           ],
           sides: [
             { name: 'Coleslaw' },
             { name: 'Mixed Vegetables' },
-            { name: 'Leafy Green Vegetables' }
+            { name: 'Leafy Green Vegetables' },
           ],
           desserts: [
             { name: 'Snack Pack (Crackers, Juice & Fruits)' },
-            { name: 'Fruitpack (Fruits and Yoghurt)' }
-          ]
-        }
+            { name: 'Fruitpack (Fruits and Yoghurt)' },
+          ],
+        },
       };
       setMenu(updatedMenu);
     };
+
     loadMenu();
+
+    const storedOrderDetails = localStorage.getItem('orderDetails');
+    if (storedOrderDetails) {
+      setOrderDetails(JSON.parse(storedOrderDetails));
+    }
   }, []);
 
   const handleItemClick = (item, category, caterer) => {
@@ -88,26 +128,30 @@ const Dashboard = () => {
       toast.error('You can only select items from one caterer.');
       return;
     }
+
     setSelectedCaterer(caterer);
     setSelectedItems(prevState => ({
       ...prevState,
-      [category]: prevState[category]?.name === item.name ? null : item
+      [caterer]: {
+        ...prevState[caterer],
+        [category]: prevState[caterer][category]?.name === item.name ? null : item,
+      },
     }));
   };
 
   const handleSubmit = async () => {
-    if (!selectedItems.entrees || !selectedItems.starches) {
+    if (!selectedItems[selectedCaterer].entrees || !selectedItems[selectedCaterer].starches) {
       toast.error('Please select at least an entree and a starch.');
       return;
     }
 
-    const selectedItemsArray = Object.entries(selectedItems)
+    const selectedItemsArray = Object.entries(selectedItems[selectedCaterer])
       .filter(([category, item]) => item !== null)
       .map(([category, item]) => ({ category, name: item.name }));
 
     try {
-      const token = localStorage.getItem('token'); // Ensure token is retrieved
-      const userId = localStorage.getItem('userId'); // Ensure userId is retrieved
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
 
       if (!token || !userId) {
         toast.error('You must be logged in to place an order.');
@@ -117,21 +161,38 @@ const Dashboard = () => {
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
 
       const orderPayload = {
-        user: userId, // Pass the user ID here
+        user: userId,
         caterer: selectedCaterer,
         date: selectedDate.toISOString(),
-        selectedItems: selectedItemsArray
+        selectedItems: selectedItemsArray.map(item => ({
+          ...item,
+          caterer: selectedCaterer, // Include the caterer name here
+        })),
       };
 
       const response = await axios.post('http://localhost:5000/api/orders', orderPayload, config);
+      
+      // Ensure the response contains the caterer name
+      const orderResponse = {
+        ...response.data,
+        selectedItems: response.data.selectedItems.map(item => ({
+          ...item,
+          caterer: selectedCaterer, // Add caterer name to each item
+        })),
+      };
+      
       toast.success('Order placed successfully!');
-      setOrderDetails(response.data); // Set the order details to state
-      setSelectedItems({ entrees: null, starches: null, sides: null, desserts: null });
+      setOrderDetails(orderResponse);
+      localStorage.setItem('orderDetails', JSON.stringify(orderResponse));
+      setSelectedItems({
+        Ruth: { entrees: null, starches: null, sides: null, desserts: null },
+        Makagi: { entrees: null, starches: null, sides: null, desserts: null },
+      });
       setSelectedCaterer('');
     } catch (error) {
       console.error('Failed to place order:', error);
@@ -142,85 +203,106 @@ const Dashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    localStorage.removeItem('orderDetails');
     dispatch(logout());
     toast.success('Logged out successfully!');
-    navigate('/login'); // Redirect to login page
+    navigate('/login');
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold text-blue-700">Lunch Ordering Dashboard</h1>
-        <button
-          className="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition duration-300"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
-      </div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Select Date</h2>
-        <DatePicker selected={selectedDate} onChange={date => setSelectedDate(date)} className="border p-2 rounded w-full" />
-      </div>
-
-      {/* Display Ordered Menu Section */}
-      {orderDetails && (
-        <div className="bg-green-100 p-4 rounded mb-6">
-          <h2 className="text-xl font-bold">Your Ordered Menu</h2>
-          <p><strong>Caterer:</strong> {orderDetails.caterer}</p>
-          <p><strong>Date:</strong> {new Date(orderDetails.date).toLocaleDateString()}</p>
-          <h3 className="font-semibold mt-4">Selected Items:</h3>
-          <ul className="list-disc pl-5">
-            {orderDetails.selectedItems.map((item, index) => (
-              <li key={index}>{item.category}: {item.name}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(menu).map(([caterer, categories]) => (
-          <div key={caterer} className="bg-white p-4 rounded shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-center">{caterer}</h2>
-            {Object.entries(categories).map(([category, items]) => (
-              <div key={category} className="mb-6">
-                <h3 className="font-semibold mb-2">{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  {items.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center p-2 border rounded cursor-pointer hover:bg-blue-100 transition duration-300 ${selectedItems[category]?.name === item.name ? 'bg-blue-200' : ''}`}
-                      onClick={() => handleItemClick(item, category, caterer)}
-                    >
-                      <span>{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="mt-6">
-        <h2 className="text-2xl font-bold mb-4">Selected Items</h2>
-        {Object.values(selectedItems).some(item => item !== null) ? (
-          <ul className="list-disc pl-5">
-            {Object.entries(selectedItems).map(([category, item], index) => (
-              item && <li key={index}>{item.name}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No items selected yet.</p>
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        Lunch Ordering Dashboard
+      </Typography>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={handleLogout}
+        startIcon={<LogoutIcon />}
+        style={{ marginBottom: '20px' }}
+      >
+        Logout
+      </Button>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Typography variant="h6" gutterBottom>
+            Select Date
+          </Typography>
+          <DatePicker
+            selected={selectedDate}
+            onChange={date => setSelectedDate(date)}
+            className="border p-2 rounded w-full"
+          />
+        </Grid>
+        {orderDetails && (
+          <Grid item xs={12}>
+            <Paper elevation={3} style={{ padding: '20px', marginBottom: '20px' }}>
+              <Typography variant="h6" gutterBottom>
+                Your Ordered Menu
+              </Typography>
+              <Typography variant="subtitle1">
+                Date: {new Date(orderDetails.date).toLocaleDateString()}
+              </Typography>
+              <List>
+                {orderDetails.selectedItems.map((item, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={`${item.caterer} - ${item.category.charAt(0).toUpperCase() + item.category.slice(1)}: ${item.name}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
         )}
-      </div>
-      <div className="mt-6">
-        <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-300" onClick={handleSubmit}>
-          Place Order
-        </button>
-      </div>
-
+        {Object.entries(menu).map(([caterer, categories]) => (
+          <Grid item xs={12} md={6} key={caterer}>
+            <Paper elevation={3} style={{ padding: '20px' }}>
+              <Typography variant="h6" gutterBottom>
+                {caterer}
+              </Typography>
+              {Object.entries(categories).map(([category, items]) => (
+                <div key={category}>
+                  <CategoryTitle variant="subtitle1" gutterBottom>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category === 'entrees' && <RestaurantIcon style={{ marginLeft: '8px' }} />}
+                    {category === 'starches' && <GrainIcon style={{ marginLeft: '8px' }} />}
+                    {category === 'sides' && <LocalDiningIcon style={{ marginLeft: '8px' }} />}
+                    {category === 'desserts' && <CakeIcon style={{ marginLeft: '8px' }} />}
+                  </CategoryTitle>
+                  <List>
+                    {items.map((item, index) => (
+                      <div key={index}>
+                        <SelectedListItem
+                          button
+                          onClick={() => handleItemClick(item, category, caterer)}
+                          selected={selectedItems[caterer][category]?.name === item.name}
+                        >
+                          <ListItemText primary={item.name} />
+                        </SelectedListItem>
+                        {index !== items.length - 1 && <Divider />}
+                      </div>
+                    ))}
+                  </List>
+                </div>
+              ))}
+            </Paper>
+          </Grid>
+        ))}
+        <Grid item xs={12}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            fullWidth
+            style={{ marginTop: '20px' }}
+          >
+            Place Order
+          </Button>
+        </Grid>
+      </Grid>
       <ToastContainer />
-    </div>
+    </Container>
   );
 };
 

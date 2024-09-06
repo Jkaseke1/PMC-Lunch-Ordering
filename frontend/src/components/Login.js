@@ -19,8 +19,15 @@ const Login = () => {
       dispatch(setUser({ user: response.data.user, token: response.data.token }));
       localStorage.setItem('token', response.data.token); // Store token
       localStorage.setItem('userId', response.data.user._id); // Store user ID
+
+      // Check if the user is an admin
+      if (response.data.user.email === 'jkaseke@tpg.co.zw') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+
       toast.success('Login successful!');
-      navigate('/dashboard');
     } catch (error) {
       toast.error('Login failed. Please check your credentials.');
     }
