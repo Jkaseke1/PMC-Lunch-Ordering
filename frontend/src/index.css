@@ -14,7 +14,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('C:\Windows\System32\pulse-lunch-ordering-app\frontend\public\food-background.jpg'); /* Update with your image path */
+  background-image: url('C:/Users/Joseph Kaseke/Documents/pulse-lunch-ordering-app/frontend/public/food-background.jpg'); /* Absolute path */
   background-size: cover;
   background-position: center;
   z-index: -1; /* Ensure the image is behind other content */
@@ -24,4 +24,17 @@ body {
   background-color: rgba(255, 255, 255, 0.8); /* White background with 80% opacity */
   border-radius: 10px; /* Optional: rounded corners */
   padding: 20px; /* Optional: padding */
+}
+
+.swing-animation {
+  animation: swing 1s ease-in-out;
+}
+
+@keyframes swing {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(5deg); }
+  80% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
 }

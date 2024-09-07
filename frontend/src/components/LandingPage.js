@@ -22,10 +22,10 @@ const LandingPage = () => {
 
   return (
     <div style={backgroundStyle} className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-5xl font-bold mb-4 text-center text-blue-700 font-bold swing-text border-4 border-blue-700 p-4 rounded">
+      <h1 className="text-5xl font-bold mb-4 text-center text-blue-700 swing-text border-4 border-blue-700 p-4 rounded">
         Welcome to Pulse Pharmaceuticals
       </h1>
-      <p className="text-lg mb-6 text-black font-bold text-center text-gray-600 border-4 border-gray-400 p-4 rounded">
+      <p className="text-lg mb-6 text-gray-600 border-4 border-gray-400 p-4 rounded">
         Your lunch ordering space with Ruth and Makagi caterers and delicious menus.
       </p>
       <div className="flex space-x-4">

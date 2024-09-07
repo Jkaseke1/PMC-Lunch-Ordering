@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
@@ -175,6 +176,7 @@ const Dashboard = () => {
         })),
       };
 
+      console.log('Order Payload:', orderPayload); // Debugging line
       const response = await axios.post('http://localhost:5000/api/orders', orderPayload, config);
       
       // Ensure the response contains the caterer name
@@ -197,6 +199,112 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to place order:', error);
       toast.error('Failed to place order. Please try again.');
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+
+      if (!token || !userId) {
+        toast.error('You must be logged in to cancel an order.');
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      };
+
+      console.log('Order ID:', orderDetails._id); // Debugging line
+      await axios.delete(`http://localhost:5000/api/orders/${orderDetails._id}`, config);
+
+      toast.success('Order cancelled successfully!');
+      setOrderDetails(null);
+      localStorage.removeItem('orderDetails');
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+      toast.error('Failed to cancel order. Please try again.');
+    }
+  };
+
+  const handleEditOrder = async () => {
+    if (orderDetails) {
+      const updatedSelectedItems = {
+        Ruth: { entrees: null, starches: null, sides: null, desserts: null },
+        Makagi: { entrees: null, starches: null, sides: null, desserts: null },
+      };
+
+      orderDetails.selectedItems.forEach(item => {
+        updatedSelectedItems[item.caterer][item.category] = { name: item.name };
+      });
+
+      setSelectedItems(updatedSelectedItems);
+      setSelectedCaterer(orderDetails.caterer);
+      setSelectedDate(new Date(orderDetails.date));
+    }
+  };
+
+  const handleAddToOrder = async () => {
+    if (!selectedItems[selectedCaterer].entrees && !selectedItems[selectedCaterer].starches) {
+      toast.error('Please select at least an entree or a starch.');
+      return;
+    }
+
+    const additionalItemsArray = Object.entries(selectedItems[selectedCaterer])
+      .filter(([category, item]) => item !== null)
+      .map(([category, item]) => ({ category, name: item.name }));
+
+    try {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+
+      if (!token || !userId) {
+        toast.error('You must be logged in to add items to the order.');
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      };
+
+      const updatedOrderPayload = {
+        ...orderDetails,
+        selectedItems: [...orderDetails.selectedItems, ...additionalItemsArray.map(item => ({
+          ...item,
+          caterer: selectedCaterer, // Include the caterer name here
+        }))],
+      };
+
+      console.log('Updated Order Payload:', updatedOrderPayload); // Debugging line
+      const response = await axios.put(`http://localhost:5000/api/orders/${orderDetails._id}`, updatedOrderPayload, config);
+      
+      // Ensure the response contains the caterer name
+      const updatedOrderResponse = {
+        ...response.data,
+        selectedItems: response.data.selectedItems.map(item => ({
+          ...item,
+          caterer: selectedCaterer, // Add caterer name to each item
+        })),
+      };
+      
+      toast.success('Items added to order successfully!');
+      setOrderDetails(updatedOrderResponse);
+      localStorage.setItem('orderDetails', JSON.stringify(updatedOrderResponse));
+      setSelectedItems({
+        Ruth: { entrees: null, starches: null, sides: null, desserts: null },
+        Makagi: { entrees: null, starches: null, sides: null, desserts: null },
+      });
+      setSelectedCaterer('');
+    } catch (error) {
+      console.error('Failed to add items to order:', error);
+      toast.error('Failed to add items to order. Please try again.');
     }
   };
 
@@ -252,6 +360,33 @@ const Dashboard = () => {
                   </ListItem>
                 ))}
               </List>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleCancelOrder}
+                fullWidth
+                style={{ marginTop: '10px' }}
+              >
+                Cancel Order
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleEditOrder}
+                fullWidth
+                style={{ marginTop: '10px' }}
+              >
+                Edit Order
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleAddToOrder}
+                fullWidth
+                style={{ marginTop: '10px' }}
+              >
+                Add Items to Order
+              </Button>
             </Paper>
           </Grid>
         )}
@@ -274,7 +409,7 @@ const Dashboard = () => {
                     {items.map((item, index) => (
                       <div key={index}>
                         <SelectedListItem
-                          button
+                          button // Ensure this is a boolean
                           onClick={() => handleItemClick(item, category, caterer)}
                           selected={selectedItems[caterer][category]?.name === item.name}
                         >
