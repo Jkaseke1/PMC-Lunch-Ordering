@@ -21,7 +21,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div style={backgroundStyle} className="flex flex-col items-center justify-center min-h-screen">
+    <div style={backgroundStyle} className="flex flex-col items-center justify-center min-h-screen w-full h-full">
       <h1 className="text-5xl font-bold mb-4 text-center text-blue-700 swing-text border-4 border-blue-700 p-4 rounded">
         Welcome to Pulse Pharmaceuticals
       </h1>
